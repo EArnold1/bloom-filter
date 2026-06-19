@@ -1,13 +1,12 @@
-use crate::bloom::FilterBuilder;
-
-pub mod bloom;
+use bloom_filter::BloomFilterBuilder;
 
 fn main() {
-    let mut filter = FilterBuilder::new(20, 0.1).build();
+    let mut filter = BloomFilterBuilder::new(20, 0.05).build();
 
     println!(
         "filter size :{}, hash count :{}",
-        &filter.filter_size, &filter.hash_count
+        &filter.get_size(),
+        &filter.get_hash_count()
     );
 
     let word_present = vec![
@@ -60,7 +59,7 @@ fn main() {
     .concat();
 
     for word in test_words {
-        if filter.check(word) {
+        if filter.lookup(word) {
             if word_absent.contains(&word) {
                 println!("'{}' is a false positive!", &word)
             } else {

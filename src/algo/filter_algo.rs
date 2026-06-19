@@ -1,30 +1,32 @@
 use simplehash::murmurhash3_128;
 
-// Create traits for the `Filter`
+// default number of items to add
+const DEFAULT_LIST_SIZE: usize = 30;
 
-pub struct FilterBuilder {
+// Create traits for the `BloomFilter`
+
+pub struct BloomFilterBuilder {
     false_positive_probability: f64, // [error rate] between 0 and 1
     list_size: usize,                // expected number of items to be stored in the filter
 }
+
 // m = filter size, k = no. of hash functions, p = false positive probability, n = no. of items(expected capacity)
-pub struct Filter {
+pub struct BloomFilter {
     list: Vec<bool>,
-    pub hash_count: usize,  // The optimal number of hash functions
-    pub filter_size: usize, // Bloom filter size
+    hash_count: usize, // The optimal number of hash functions
+    size: usize,       // Bloom filter size
 }
 
-const DEFAULT_LIST_SIZE: usize = 30; // default number of items to add
-
-impl Default for FilterBuilder {
+impl Default for BloomFilterBuilder {
     fn default() -> Self {
-        FilterBuilder {
+        BloomFilterBuilder {
             false_positive_probability: 0.05,
             list_size: DEFAULT_LIST_SIZE,
         }
     }
 }
 
-impl FilterBuilder {
+impl BloomFilterBuilder {
     pub fn new(list_size: usize, false_positive_probability: f64) -> Self {
         assert!((0_f64..=1_f64).contains(&false_positive_probability));
 
@@ -35,9 +37,9 @@ impl FilterBuilder {
     }
 }
 
-impl FilterBuilder {
+impl BloomFilterBuilder {
     /// Size of the bloom filter
-    fn get_size(&self) -> usize {
+    fn derive_size(&self) -> usize {
         // m = -(n * math.log(p))/(math.log(2)**2)
         // where n = self.size, p = self.false_positive_probability
         let list_size: f64 = self.list_size as f64;
@@ -46,7 +48,7 @@ impl FilterBuilder {
         filter_size.round() as usize
     }
 
-    fn get_hash_count(&self, filter_size: usize) -> usize {
+    fn derive_hash_count(&self, filter_size: usize) -> usize {
         // k = (m/n) * lg(2)
         // where m = size of filter(self.filter_size), n = list_size
         let hash_count = (filter_size / self.list_size) as f64 * 2_f64.ln();
@@ -54,43 +56,50 @@ impl FilterBuilder {
         hash_count.round() as usize
     }
 
-    pub fn build(self) -> Filter {
-        let filter_size = self.get_size();
-        let hash_count = self.get_hash_count(filter_size);
-        Filter {
+    pub fn build(self) -> BloomFilter {
+        let filter_size = self.derive_size();
+        let hash_count = self.derive_hash_count(filter_size);
+        BloomFilter {
             list: vec![false; filter_size],
             hash_count,
-            filter_size,
+            size: filter_size,
         }
     }
 }
 
-impl Default for Filter {
+impl Default for BloomFilter {
     fn default() -> Self {
-        FilterBuilder::default().build()
+        BloomFilterBuilder::default().build()
     }
 }
 
-impl Filter {
+impl BloomFilter {
     // TODO: Accept bytes
     pub fn insert(&mut self, item: &str) {
         for i in 0..self.hash_count {
             let seed = u32::try_from(i).expect("[Insert]: seed should be within u32 range");
-            let digest = (murmurhash3_128(item.as_bytes(), seed) as usize) % self.filter_size;
+            let digest = (murmurhash3_128(item.as_bytes(), seed) as usize) % self.size;
 
             self.list[digest] = true
         }
     }
 
-    pub fn check(&self, item: &str) -> bool {
+    pub fn lookup(&self, item: &str) -> bool {
         for i in 0..self.hash_count {
             let seed = u32::try_from(i).expect("[Check]: seed should be within u32 range");
-            let digest = (murmurhash3_128(item.as_bytes(), seed) as usize) % self.filter_size;
+            let digest = (murmurhash3_128(item.as_bytes(), seed) as usize) % self.size;
 
             if !self.list[digest] {
                 return false;
             }
         }
         true
+    }
+
+    pub fn get_hash_count(&self) -> usize {
+        self.hash_count
+    }
+    pub fn get_size(&self) -> usize {
+        self.size
     }
 }
