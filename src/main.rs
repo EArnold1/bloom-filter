@@ -1,11 +1,20 @@
-use crate::bloom::Filter;
+use crate::bloom::FilterBuilder;
+use rand::seq::SliceRandom; // Provides the shuffle method
+use rand::thread_rng; // Provides the random number generator
 
 pub mod bloom;
 
 fn main() {
-    let mut filter = Filter::default();
+    let mut filter = FilterBuilder::new(20, 0.05).build();
 
-    let word_present = vec![
+    println!(
+        "filter size :{}, hash count :{}",
+        &filter.filter_size, &filter.hash_count
+    );
+
+    let mut rng = thread_rng();
+
+    let mut word_present = vec![
         "abound",
         "abounds",
         "abundance",
@@ -29,7 +38,7 @@ fn main() {
         "genial",
     ];
 
-    let word_absent = vec![
+    let mut word_absent = vec![
         "bluff",
         "cheater",
         "hate",
@@ -48,7 +57,22 @@ fn main() {
         filter.insert(item);
     }
 
-    let test_words = [word_present.clone(), word_absent.clone()].concat();
+    // word_present.shuffle(&mut rng);
+    // word_absent.shuffle(&mut rng);
+
+    let mut test_words = [
+        word_present.iter().take(10).cloned().collect(),
+        word_absent.clone(),
+    ]
+    .concat();
+
+    // test_words.shuffle(&mut rng);
+
+    // if filter.check("Arnold") {
+    //     println!("Probably Present")
+    // } else {
+    //     println!("definitely absent")
+    // }
 
     for word in test_words {
         if filter.check(word) {

@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 simplehash = "0.1.3"
+rand = "0.8"
