@@ -1,4 +1,7 @@
 [package]
+authors = ["Arnold Emmanuel <arnoldemmanuel15@gmail.com>"]
+license = "MIT"
+description = "A Rust implementation of a Bloom filter"
 name = "bloom_filter"
 version = "0.1.0"
 edition = "2024"

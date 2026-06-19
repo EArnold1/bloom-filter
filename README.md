@@ -1,6 +1,6 @@
 # bloom_filter (Rust)
 
-A small Rust implementation of a Bloom filter with a builder to derive
+A Rust implementation of a Bloom filter with a builder to derive
 an appropriate bit-array size and number of hash functions from an
 expected capacity and a target false-positive probability.
 
