@@ -52,8 +52,10 @@ impl BloomFilterBuilder {
     ///
     /// Panics if `false_positive_probability` is not within `0.0..=1.0`.
     pub fn new(list_size: usize, false_positive_probability: f64) -> Self {
-        assert!((0_f64..=1_f64).contains(&false_positive_probability),
-                "false_positive_probability must be between 0 and 1");
+        assert!(
+            (0_f64..=1_f64).contains(&false_positive_probability),
+            "false_positive_probability must be between 0 and 1"
+        );
 
         Self {
             false_positive_probability,
@@ -108,13 +110,10 @@ impl BloomFilter {
     /// The item is hashed `k` times with different seeds (0..k-1) using
     /// `murmurhash3_128`. Each resulting index sets the corresponding bit in
     /// the filter's bit vector.
-    ///
-    /// Note: the method currently accepts a `&str`; if you need arbitrary
-    /// byte keys, convert them to bytes before calling or extend the API.
-    pub fn insert(&mut self, item: &str) {
+    pub fn insert(&mut self, item: &[u8]) {
         for i in 0..self.hash_count {
             let seed = u32::try_from(i).expect("[Insert]: seed should be within u32 range");
-            let digest = (murmurhash3_128(item.as_bytes(), seed) as usize) % self.size;
+            let digest = (murmurhash3_128(item, seed) as usize) % self.size;
 
             self.list[digest] = true
         }
@@ -124,10 +123,10 @@ impl BloomFilter {
     ///
     /// Returns `false` if the item is definitely not in the set; returns
     /// `true` if the item is possibly in the set (could be a false positive).
-    pub fn lookup(&self, item: &str) -> bool {
+    pub fn lookup(&self, item: &[u8]) -> bool {
         for i in 0..self.hash_count {
             let seed = u32::try_from(i).expect("[Check]: seed should be within u32 range");
-            let digest = (murmurhash3_128(item.as_bytes(), seed) as usize) % self.size;
+            let digest = (murmurhash3_128(item, seed) as usize) % self.size;
 
             if !self.list[digest] {
                 return false;

@@ -49,7 +49,7 @@ fn main() {
     ];
 
     for item in &word_present {
-        filter.insert(item);
+        filter.insert(item.as_bytes());
     }
 
     let test_words = [
@@ -59,7 +59,7 @@ fn main() {
     .concat();
 
     for word in test_words {
-        if filter.lookup(word) {
+        if filter.lookup(word.as_bytes()) {
             if word_absent.contains(&word) {
                 println!("'{}' is a false positive!", &word)
             } else {
